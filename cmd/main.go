@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"flag"
-	"ftcli/internal/recieve"
+	"ftcli/internal/receive"
 	"ftcli/internal/send"
 	"log"
 	"net"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -16,15 +17,15 @@ func main(){
 	role := flag.String("role", "" , "Designate yourself as sender (send) or reciever (recv)")
 	rip := flag.String("rip", "127.0.0.1", "ip address of the peer")
 	file := flag.String("file", "", "file to transfer")
-	pass := flag.String("pass", "", "password used to encrypt file")
+	//pass := flag.String("pass", "", "password used to encrypt file")
 	flag.Parse()
 
 	// do validation of flags here
 	// Validate password. user must enter password.
 	// accomodate no password, infrom user of implications
-	if *pass == "" {
-		log.Fatal("must specify a password for transfer")
-	}
+	// if *pass == "" {
+	// 	log.Fatal("must specify a password for transfer")
+	// }
 
 
 	// Validate provided role as one of two valid roles
@@ -51,9 +52,11 @@ func main(){
 	// Validate provided file. 
 	// if userRole is not send, then silently ignore
 	if userRole == "send" {
-		// Verify file existss
-		log.Printf("file is : %v", *file)
-		file, err := os.Stat(*file)
+		// go can't expand ~, so you manully have to replace the ~ with the userdir
+		home, _ := os.UserHomeDir()
+		path := strings.Replace(*file, "~", home, 1)
+
+		file, err := os.Open(path)
 		if err != nil{
 			log.Fatalf("fail failure: %v", err)
 		}
@@ -61,12 +64,9 @@ func main(){
 		go send.SendFile(context.TODO(), &wg, file, peerAddr)
 	}else{
 		wg.Add(1)
-		go recieve.RecieveFile(context.TODO(), &wg, peerAddr)
+		go receive.ReceiveFile(context.TODO(), &wg)
 	}
 
-	
-
-	
 	wg.Wait()
 	log.Print("operations complete. good-bye 👋")
 }

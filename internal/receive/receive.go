@@ -1,4 +1,4 @@
-package recieve
+package receive
 
 import (
 	"context"
@@ -16,21 +16,22 @@ import (
 	"sync"
 )
 
-// Recieve mode is relitively simple. just opens a listener and waits to get
-func RecieveFile(ctx context.Context, wg *sync.WaitGroup, rip net.IP){
+// receive mode is relitively simple. just opens a listener and waits to get
+func ReceiveFile(ctx context.Context, wg *sync.WaitGroup){
 	defer wg.Done()
 	
 	localLn := net.TCPAddr{
 		IP: net.ParseIP("0.0.0.0"),
-		Port: config.RecievePort,
+		Port: config.ReceivePort,
 	}
 
 	ln, err := net.ListenTCP("tcp",&localLn)
 	if err != nil {
 		log.Fatalf("failed to create listener: %v", err)
 	}else{
-		log.Printf("waiting to recieve on port: %d", localLn.Port)
+		log.Printf("Waiting for file transfer on port: %d", localLn.Port)
 	}
+
 	for { 
 		conn, err := ln.Accept()
 		if err != nil {
@@ -40,17 +41,18 @@ func RecieveFile(ctx context.Context, wg *sync.WaitGroup, rip net.IP){
 			}
 			continue
 		}
-		log.Printf("Recieving on port: %d", localLn.Port)
+		log.Printf("Receiving on port: %d", localLn.Port)
 		go downloadFile(conn)
 	}
 }
 
 func downloadFile(conn net.Conn){
+
 	log.Printf("Downloading file from %v....", conn.RemoteAddr().String())
 
-	hdr, err := recieveHeader(conn)
+	hdr, err := receiveHeader(conn)
 	if err != nil{
-		log.Printf("failed to recieve header: %v", err)
+		log.Printf("failed to receive header: %v", err)
 		return
 	}
 	
@@ -60,6 +62,7 @@ func downloadFile(conn net.Conn){
 	log.Printf("Continue Download? (yes/no): ")
 	var resp string
 	fmt.Scanln(&resp)
+	log.Printf("%q", resp)
 	if resp != "yes" {
 		conn.Close()
 		log.Print("Not downloading...")
@@ -72,11 +75,11 @@ func downloadFile(conn net.Conn){
 	}
 	defer f.Close()
 	
-	hash, bytesRecieved, err := shared.CopyAndHash(f,conn)
+	hash, bytesReceived, err := shared.CopyAndHash(f,conn)
 	if err != nil{
 		log.Printf("error copying file: %v", err)
 	}
-	log.Printf("successfully copied %d bytes", bytesRecieved)
+	log.Printf("successfully copied %d bytes", bytesReceived)
 	log.Printf("hash of file is : %v", hash)
 
 	if hash == hdr.CheckSum {
@@ -87,7 +90,7 @@ func downloadFile(conn net.Conn){
 }
 
 
-func recieveHeader(conn net.Conn) (models.Header, error) {
+func receiveHeader(conn net.Conn) (models.Header, error) {
 
 	var hdr models.Header
 	var lenBuf [4]byte

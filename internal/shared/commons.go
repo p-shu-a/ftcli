@@ -4,8 +4,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
-	"log"
-	"net"
 	"os"
 )
 
@@ -28,7 +26,6 @@ func FileChecksum(file *os.File) (string, error){
 	// so in effect, the cursor stays at the current position
 	// get current position
 	curr, _ := file.Seek(0, io.SeekCurrent)
-	log.Printf("curr: %d", curr)  /// always 0 in my case
 
 	// at the end of the func, move the cursor to where it was when we recieve this file
 	// we're saying "set cursor position to curr (0) from the start of the file."
@@ -53,9 +50,3 @@ func FileChecksum(file *os.File) (string, error){
 	doing this: curr, _ := file.Seek(0, io.SeekCurrent)
 	is like a hedge. "we don't know where we are in the file, but record the current position so we can come back to it later"
 */
-
-
-func SendFile(conn net.Conn, file *os.File){
-	io.Copy(conn, file)
-	
-}
