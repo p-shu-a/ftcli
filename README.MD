@@ -1,18 +1,17 @@
 ### A file transfer utility
 
-Command syntax:
-`ftcli -rip=192.168.60.70 -role=send -file=/loc/to/file -pass=passw0rd`
-Ideal syntax
-`ftcli -send -rip 192.168.60.70 -f /loc/to/file` (prompted for pass)
+#### Command syntax:
+- `ftcli -rip=192.168.60.70 -role=send -file=/loc/to/file -pass=passw0rd`
 
-
-### short term goals
+#### mmediate goals
 - be able to send a file and validate file on recieving end (hashes must match) ✅
 - at no point should the entire file be loaded in memory for the sender
     - using io.copy() so ✅
-- files must be encrypted with password during transfer 
-
-### long term goals
-- for large files, offer compression
+- files must be encrypted with password during transfer
 - offer the reciever option to decline download
-- if the download is interupted, you should be able to resume from there you left off. 
+
+#### Next steps
+- for large files, offer compression
+- if the download is interupted, you should be able to resume from there you left off.
+- improve the syntax of the command:
+    - `ftcli -send -rip 192.168.60.70 -f /loc/to/file` (prompted for pass)
