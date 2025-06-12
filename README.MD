@@ -1,9 +1,9 @@
 ### A file transfer utility
 
 #### Command syntax:
-`ftcli -h`
-`ftcli -rip=192.168.60.70 -role=send -file=/loc/to/file -pass=passw0rd` to send
-`ftcli -role=recv -pass=passw0rd` to recieve
+- `ftcli -h`
+- Send file:     `ftcli -rip=192.168.60.70 -role=send -file=/loc/to/file -pass=passw0rd`
+- Recieve file:  `ftcli -role=recv -pass=passw0rd`
 
 #### Immediate goals
 - be able to send a file and validate file on recieving end (hashes must match) ✅
