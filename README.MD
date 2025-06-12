@@ -1,9 +1,11 @@
 ### A file transfer utility
 
 #### Command syntax:
-- `ftcli -rip=192.168.60.70 -role=send -file=/loc/to/file -pass=passw0rd`
+`ftcli -h`
+`ftcli -rip=192.168.60.70 -role=send -file=/loc/to/file -pass=passw0rd` to send
+`ftcli -role=recv -pass=passw0rd` to recieve
 
-#### mmediate goals
+#### Immediate goals
 - be able to send a file and validate file on recieving end (hashes must match) ✅
 - at no point should the entire file be loaded in memory for the sender
     - using io.copy() so ✅
