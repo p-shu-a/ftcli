@@ -27,7 +27,10 @@ func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP
 	}
 	log.Printf("file hash: %v", hash)
 
-	conn := dialRemote(rip)
+	conn, err := dialRemote(rip)
+	if err != nil{
+		log.Fatalf("failed to connect to remote ip: %v", err)
+	}
 
 	header := models.Header{
 		FileName: file.Name(),
@@ -47,19 +50,19 @@ func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP
 }
 
 // Dials the remote address and returns a connection (net.Conn)
-func dialRemote(rip net.IP) net.Conn {
+func dialRemote(rip net.IP) (net.Conn, error) {
 	remoteAddr := net.TCPAddr{
 		IP: rip,
 		Port: config.ReceivePort,
 	}
 	conn, err := net.Dial("tcp", remoteAddr.String())
 	if err != nil{
-		log.Fatalf("failed to dial remote: %v", err)
+		return nil, err
 	}
-	return conn
+	return conn, nil
 }
 
-func sendHeader(conn net.Conn, header models.Header) error {
+func sendHeader(dst net.Conn, header models.Header) error {
 
 	jsonData, err := json.Marshal(header)
 	if err != nil{
@@ -68,11 +71,11 @@ func sendHeader(conn net.Conn, header models.Header) error {
 	var lenBuf [4]byte
 	binary.BigEndian.PutUint32(lenBuf[:], uint32(len(jsonData)))
 
-	if _, err := conn.Write(lenBuf[:]); err != nil{
+	if _, err := dst.Write(lenBuf[:]); err != nil{
 		return err
 	}
 
-	if _ , err := conn.Write(jsonData); err != nil {
+	if _ , err := dst.Write(jsonData); err != nil {
 		return err
 	}
 

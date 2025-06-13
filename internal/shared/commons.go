@@ -22,13 +22,12 @@ func CopyAndHash(dst io.Writer, src io.Reader) (string, int64, error) {
 
 func FileChecksum(file *os.File) (string, error){
 
-	// move 0 bytes from the current cursor position
-	// so in effect, the cursor stays at the current position
-	// get current position
+	// record the current position of the cursor
+	// we do this because we don't know at what stage the file maybe passed.
+	// we record the cursor position so we can reset back to the location
 	curr, _ := file.Seek(0, io.SeekCurrent)
 
 	// at the end of the func, move the cursor to where it was when we recieve this file
-	// we're saying "set cursor position to curr (0) from the start of the file."
 	defer file.Seek(curr, io.SeekStart)
 
 	// go to start of file
@@ -45,8 +44,3 @@ func FileChecksum(file *os.File) (string, error){
 
 	return checksum, nil
 }
-
-/*
-	doing this: curr, _ := file.Seek(0, io.SeekCurrent)
-	is like a hedge. "we don't know where we are in the file, but record the current position so we can come back to it later"
-*/

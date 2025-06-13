@@ -70,5 +70,3 @@ func main(){
 	wg.Wait()
 	log.Print("operations complete. good-bye 👋")
 }
-
-
