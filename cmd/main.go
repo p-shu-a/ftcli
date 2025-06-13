@@ -12,21 +12,18 @@ import (
 	"sync"
 )
 
-func main(){
+func main() {
 	// ideally, you can just do something like "--sender" or "--recieve" without the '-role' tag
-	role := flag.String("role", "" , "Designate yourself as sender (send) or reciever (recv)")
-	rip := flag.String("rip", "127.0.0.1", "ip address of the peer")
+	role := flag.String("role", "", "Designate yourself as sender (send) or receiver (recv)")
+	rip := flag.String("rip", "127.0.0.1", "ip address of peer")
 	file := flag.String("file", "", "file to transfer")
-	//pass := flag.String("pass", "", "password used to encrypt file")
+	pass := flag.String("pass", "", "password used to encrypt file")
 	flag.Parse()
 
-	// do validation of flags here
-	// Validate password. user must enter password.
-	// accomodate no password, infrom user of implications
-	// if *pass == "" {
-	// 	log.Fatal("must specify a password for transfer")
-	// }
-
+	// Validate password. user must enter password
+	if *pass == "" {
+		panic("must specify a password for transfer")
+	}
 
 	// Validate provided role as one of two valid roles
 	var userRole string
@@ -40,31 +37,33 @@ func main(){
 		log.Fatal("unrecognized role. use send or recv")
 	}
 
-
 	// Validate provided IP as legit IP...
 	peerAddr := net.ParseIP(*rip)
-	if peerAddr == nil{
-		log.Fatal("Must enter valid IP")
+	if peerAddr == nil {
+		log.Fatal("must enter valid IP")
 	}
 
 	var wg sync.WaitGroup
 
-	// Validate provided file. 
+	// Validate provided file.
 	// if userRole is not send, then silently ignore
 	if userRole == "send" {
 		// go can't expand ~, so you manully have to replace the ~ with the userdir
 		home, _ := os.UserHomeDir()
 		path := strings.Replace(*file, "~", home, 1)
 
+		// open the file you're going to send
 		file, err := os.Open(path)
-		if err != nil{
-			log.Fatalf("fail failure: %v", err)
+		if err != nil {
+			log.Fatalf("failed to open file:  %v", err)
 		}
+
 		wg.Add(1)
-		go send.SendFile(context.TODO(), &wg, file, peerAddr)
-	}else{
+		go send.SendFile(context.TODO(), &wg, file, peerAddr, *pass)
+	} else {
+
 		wg.Add(1)
-		go receive.ReceiveFile(context.TODO(), &wg)
+		go receive.ReceiveFile(context.TODO(), &wg, *pass)
 	}
 
 	wg.Wait()

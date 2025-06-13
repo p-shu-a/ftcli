@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"ftcli/config"
+	"ftcli/internal/encryption"
 	"ftcli/internal/shared"
 	"ftcli/models"
 	"io"
@@ -17,67 +18,77 @@ import (
 )
 
 // receive mode is relitively simple. just opens a listener and waits to get
-func ReceiveFile(ctx context.Context, wg *sync.WaitGroup){
+func ReceiveFile(ctx context.Context, wg *sync.WaitGroup, password string) {
 	defer wg.Done()
-	
+
 	localLn := net.TCPAddr{
-		IP: net.ParseIP("0.0.0.0"),
+		IP:   net.ParseIP("0.0.0.0"),
 		Port: config.ReceivePort,
 	}
 
-	ln, err := net.ListenTCP("tcp",&localLn)
+	ln, err := net.ListenTCP("tcp", &localLn)
 	if err != nil {
 		log.Fatalf("failed to create listener: %v", err)
-	}else{
+	} else {
 		log.Printf("Waiting for file transfer on port: %d", localLn.Port)
 	}
 
-	for { 
+	for {
 		conn, err := ln.Accept()
 		if err != nil {
 			// what are the possilbe errors?
-			if errors.Is(err, net.ErrClosed){
+			if errors.Is(err, net.ErrClosed) {
 				return
 			}
 			continue
 		}
 		log.Printf("Receiving on port: %d", localLn.Port)
-		
-		go downloadFile(conn)
+		go downloadFile(conn, password)
 	}
 }
 
-func downloadFile(conn net.Conn){
+// Download the actual file
+func downloadFile(srcConn net.Conn, password string) {
 
-	log.Printf("Downloading file from %v....", conn.RemoteAddr().String())
+	log.Printf("Downloading file from %v....", srcConn.RemoteAddr().String())
 
-	hdr, err := receiveHeader(conn)
-	if err != nil{
+	// Receive the header
+	hdr, err := receiveHeader(srcConn)
+	if err != nil {
 		log.Printf("failed to receive header: %v", err)
 		return
 	}
-	
-	log.Printf("head filename: %v", hdr.FileName)
-	log.Printf("head checksum: %v", hdr.CheckSum)
+	log.Printf("Filename: %v", hdr.FileName)
+	log.Printf("sha256 checksum: %v", hdr.CheckSum)
 
-	log.Printf("Continue Download? (yes/no): ")
+	// Allow user to accept or decline
+	log.Printf("Continue Download? (yes/no/y/n/Y/N): ")
 	var resp string
 	fmt.Scanln(&resp)
 	log.Printf("%q", resp)
 	if resp != "yes" {
-		conn.Close()
+		srcConn.Close()
 		log.Print("Not downloading...")
 		return
 	}
 
-	f, err := os.Create(hdr.FileName)
-	if err != nil{
-		log.Fatal("failed to create file: ", err)
+	strReader, err := encryption.DecryptSetup(hdr.IV, password, srcConn)
+	if err != nil {
+		log.Printf("Decryption setup failed: %v", err)
+		return
 	}
-	defer f.Close()
-	
-	hash, bytesReceived, err := shared.CopyAndHash(f,conn)
-	if err != nil{
+
+	// create the file for saving
+	file, err := os.Create(hdr.FileName)
+	if err != nil {
+		log.Printf("failed to create file: %v", err)
+		return
+	}
+	defer file.Close()
+
+	// write to file and get hash of file
+	hash, bytesReceived, err := shared.CopyAndHash(file, strReader)
+	if err != nil {
 		log.Printf("error copying file: %v", err)
 	}
 	log.Printf("successfully copied %d bytes", bytesReceived)
@@ -85,30 +96,37 @@ func downloadFile(conn net.Conn){
 
 	if hash == hdr.CheckSum {
 		log.Printf("hashes match")
+	} else {
+		log.Printf("Hash mismatch!")
 	}
-
 	log.Printf("finished downloading %v", hdr.FileName)
+
 }
 
-
+// Receive the header
 func receiveHeader(conn net.Conn) (models.Header, error) {
 
 	var hdr models.Header
 	var lenBuf [4]byte
 
-	if _, err := io.ReadFull(conn, lenBuf[:]); err !=  nil {
+	// read header length
+	if _, err := io.ReadFull(conn, lenBuf[:]); err != nil {
 		return models.Header{}, err
 	}
 
+	// turn header length into a unsigned (hum0n readable) int
 	headerLen := binary.BigEndian.Uint32(lenBuf[:])
-	log.Printf("header len: %v", headerLen)
-	
-	jsonData := make([]byte, headerLen)
-	if _, err := io.ReadFull(conn, jsonData); err != nil {
+
+	log.Printf("STATS FOR NERDS: header len: %v", headerLen)
+
+	// read the jsonbytes
+	jsonBytes := make([]byte, headerLen)
+	if _, err := io.ReadFull(conn, jsonBytes); err != nil {
 		return models.Header{}, err
 	}
 
-	if err := json.Unmarshal(jsonData, &hdr); err != nil{
+	// turn into a struct
+	if err := json.Unmarshal(jsonBytes, &hdr); err != nil {
 		return models.Header{}, err
 	}
 

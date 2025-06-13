@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"ftcli/config"
+	"ftcli/internal/encryption"
 	"ftcli/internal/shared"
 	"ftcli/models"
 	"io"
@@ -14,68 +15,81 @@ import (
 	"sync"
 )
 
-func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP){
+func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP, password string) {
 	defer wg.Done()
 	defer file.Close()
 
-	log.Printf("file name: %v", file.Name())
-	
-	// calculate sha256 checksum of file
-	hash, err := shared.FileChecksum(file)
+	hash, err := shared.FileChecksumSHA265(file)
 	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("file hash: %v", hash)
-
-	conn, err := dialRemote(rip)
-	if err != nil{
-		log.Fatalf("failed to connect to remote ip: %v", err)
+		log.Fatal(err) /// log fatal or just a return?
 	}
 
+	dstConn, err := dialRemote(rip)
+	if err != nil {
+		log.Fatalf("failed to connect to remote ip: %v", err) /// log fatal or just a return?
+	}
+
+	iv, err := encryption.GenerateIV()
+	if err != nil {
+		log.Fatal(err) /// log fatal or just a return?
+	}
+
+	// Create a header
 	header := models.Header{
 		FileName: file.Name(),
 		CheckSum: hash,
+		IV:       iv,
 	}
-	if err := sendHeader(conn, header); err != nil{
+
+	if err := sendHeader(dstConn, header); err != nil {
 		log.Printf("failed to send header: %v", err)
 	}
-	
-	bytesWritten, err := io.Copy(conn, file)
-	if err != nil{
+
+	// get a cipher stream
+	strWriter, err := encryption.EncryptSetup(header.IV, password, dstConn)
+	if err != nil {
+		log.Fatal(err) /// log fatal or just a return?
+	}
+	// encrypt and send data
+	bytesWritten, err := io.Copy(strWriter, file)
+	if err != nil {
 		log.Fatalf("failed to send file: %v", err)
 	}
 
 	log.Printf("wrote %d bytes to remote", bytesWritten)
-	
 }
 
 // Dials the remote address and returns a connection (net.Conn)
 func dialRemote(rip net.IP) (net.Conn, error) {
 	remoteAddr := net.TCPAddr{
-		IP: rip,
+		IP:   rip,
 		Port: config.ReceivePort,
 	}
 	conn, err := net.Dial("tcp", remoteAddr.String())
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	return conn, nil
 }
 
+// Sends header to peer
 func sendHeader(dst net.Conn, header models.Header) error {
 
-	jsonData, err := json.Marshal(header)
-	if err != nil{
+	// marshal to json formatted bytes
+	headerBytes, err := json.Marshal(header)
+	if err != nil {
 		return err
 	}
+	// calcualte the length of the header
 	var lenBuf [4]byte
-	binary.BigEndian.PutUint32(lenBuf[:], uint32(len(jsonData)))
+	binary.BigEndian.PutUint32(lenBuf[:], uint32(len(headerBytes)))
 
-	if _, err := dst.Write(lenBuf[:]); err != nil{
+	// Let peer know how large the header they're about to receive is
+	if _, err := dst.Write(lenBuf[:]); err != nil {
 		return err
 	}
-
-	if _ , err := dst.Write(jsonData); err != nil {
+	// send actual header
+	if _, err := dst.Write(headerBytes); err != nil {
 		return err
 	}
 

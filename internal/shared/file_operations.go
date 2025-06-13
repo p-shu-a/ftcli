@@ -20,7 +20,8 @@ func CopyAndHash(dst io.Writer, src io.Reader) (string, int64, error) {
 
 }
 
-func FileChecksum(file *os.File) (string, error){
+// Calculates the sha256 hash for the file
+func FileChecksumSHA265(file *os.File) (string, error){
 
 	// record the current position of the cursor
 	// we do this because we don't know at what stage the file maybe passed.
