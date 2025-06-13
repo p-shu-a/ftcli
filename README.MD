@@ -7,10 +7,10 @@
 
 #### Immediate goals
 - be able to send a file and validate file on recieving end (hashes must match) ✅
-- at no point should the entire file be loaded in memory for the sender
+- at no point should the entire file be loaded in memory for the sender ✅
     - using io.copy() so ✅
-- files must be encrypted with password during transfer
-- offer the reciever option to decline download
+- files must be encrypted with password during transfer ✅
+- offer the reciever option to decline download ✅
 
 #### Next steps
 - for large files, offer compression
