@@ -78,7 +78,7 @@ func TestFileChecksum(t *testing.T){
 	sum := fmt.Sprintf("%x",hash.Sum(nil))
 
 	// use the function to get the checksum of the file
-	chkSum, err := FileChecksum(file)
+	chkSum, err := FileChecksumSHA265(file)
 	if err != nil {
 		t.Fatal(err)
 	}
