@@ -14,6 +14,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -36,13 +37,14 @@ func ReceiveFile(ctx context.Context, wg *sync.WaitGroup, password string) {
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			// what are the possilbe errors?
+			// what are the possible errors?
 			if errors.Is(err, net.ErrClosed) {
 				return
 			}
 			continue
 		}
 		log.Printf("Receiving on port: %d", localLn.Port)
+		// Download accept/decline should be here
 		go downloadFile(conn, password)
 	}
 }
@@ -58,33 +60,27 @@ func downloadFile(srcConn net.Conn, password string) {
 		log.Printf("failed to receive header: %v", err)
 		return
 	}
-	log.Printf("Filename: %v", hdr.FileName)
-	log.Printf("sha256 checksum: %v", hdr.CheckSum)
-
-	log.Printf("entier header: %v", hdr)
+	// log.Printf("Filename: %v", hdr.FileName)
+	// log.Printf("sha256 checksum: %v", hdr.CheckSum)
+	// log.Printf("entire header: %v", hdr)
 
 	// Allow user to accept or decline
-	log.Printf("Continue Download? (yes/no/y/n/Y/N): ")
+	log.Printf("Continue Download? (yes/no): ")
 	var resp string
 	fmt.Scanln(&resp)
-	log.Printf("%q", resp)
-	if resp != "yes" {
+	resp = strings.ToLower(resp)
+	if resp != "yes"{
 		srcConn.Close()
 		log.Print("Not downloading...")
 		return
 	}
 
+	/// decrypt with CHACAH20
 	strReader, err := encryption.DecryptSetupChaCha20(hdr.Salt, hdr.Nonce, password, srcConn)
 	if err != nil {
 		log.Printf("Decryption setup failed: %v", err)
 		return
 	}
-
-	// strReader, err := encryption.DecryptSetupAES(hdr.IV, password, srcConn)
-	// if err != nil {
-	// 	log.Printf("Decryption setup failed: %v", err)
-	// 	return
-	// }
 
 	// create the file for saving
 	file, err := os.Create(hdr.FileName)      // what if file with same name already exists?
@@ -125,7 +121,7 @@ func receiveHeader(conn net.Conn) (models.Header, error) {
 	// turn header length into a unsigned (hum0n readable) int
 	headerLen := binary.BigEndian.Uint32(lenBuf[:])
 
-	log.Printf("STATS FOR NERDS: header len: %v", headerLen)
+	//log.Printf("STATS FOR NERDS: header len: %v", headerLen)
 
 	// read the jsonbytes
 	jsonBytes := make([]byte, headerLen)

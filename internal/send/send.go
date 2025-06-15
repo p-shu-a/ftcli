@@ -29,28 +29,7 @@ func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP
 		log.Fatalf("failed to connect to remote ip: %v", err) /// log fatal or just a return?
 	}
 
-
-	//////////////////////////////////// AES business /////////////////////////////////////
-	// iv, err := encryption.GenerateIV()
-	// if err != nil {
-	// 	log.Fatal(err) /// log fatal or just a return?
-	// }
-
-	// // Create a header
-	// header := models.HeaderAES{
-	// 	FileName: file.Name(),
-	// 	CheckSum: hash,
-	// 	IV:       iv,
-	// }
-
-	// // get a cipher stream
-	// strWriter, err := encryption.EncryptSetupAES(header.IV, password, dstConn)
-	// if err != nil {
-	// 	log.Fatal(err) /// log fatal or just a return?
-	// }
-	//////////////////////////////////// AES business END /////////////////////////////////////
-
-	//////////////////////////////////// ChaCha20 business /////////////////////////////////////
+	//////////////////////////////////// Send Using ChaCha20 /////////////////////////////////////
 	salt, err := encryption.GenerateSalt()
 	if err != nil{
 		log.Fatal(err)
@@ -70,7 +49,7 @@ func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP
 		Nonce: nonce,
 		Salt: salt,
 	}
-	//////////////////////////////////// AES business /////////////////////////////////////
+	//////////////////////////////////// ChaCha20 business /////////////////////////////////////
 
 	if err := sendHeader(dstConn, header); err != nil {
 		log.Printf("failed to send header: %v", err)
