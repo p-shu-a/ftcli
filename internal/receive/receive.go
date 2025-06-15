@@ -61,6 +61,8 @@ func downloadFile(srcConn net.Conn, password string) {
 	log.Printf("Filename: %v", hdr.FileName)
 	log.Printf("sha256 checksum: %v", hdr.CheckSum)
 
+	log.Printf("entier header: %v", hdr)
+
 	// Allow user to accept or decline
 	log.Printf("Continue Download? (yes/no/y/n/Y/N): ")
 	var resp string
@@ -72,14 +74,20 @@ func downloadFile(srcConn net.Conn, password string) {
 		return
 	}
 
-	strReader, err := encryption.DecryptSetup(hdr.IV, password, srcConn)
+	strReader, err := encryption.DecryptSetupChaCha20(hdr.Salt, hdr.Nonce, password, srcConn)
 	if err != nil {
 		log.Printf("Decryption setup failed: %v", err)
 		return
 	}
 
+	// strReader, err := encryption.DecryptSetupAES(hdr.IV, password, srcConn)
+	// if err != nil {
+	// 	log.Printf("Decryption setup failed: %v", err)
+	// 	return
+	// }
+
 	// create the file for saving
-	file, err := os.Create(hdr.FileName)
+	file, err := os.Create(hdr.FileName)      // what if file with same name already exists?
 	if err != nil {
 		log.Printf("failed to create file: %v", err)
 		return

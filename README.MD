@@ -1,4 +1,6 @@
 ### A file transfer utility
+- Used to transfer a file over a network using symetric key for encryption.
+- Only uses the Go standard lib.
 
 #### Command syntax:
 - `ftcli -h`

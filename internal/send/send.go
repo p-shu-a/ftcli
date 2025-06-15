@@ -29,27 +29,53 @@ func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP
 		log.Fatalf("failed to connect to remote ip: %v", err) /// log fatal or just a return?
 	}
 
-	iv, err := encryption.GenerateIV()
+
+	//////////////////////////////////// AES business /////////////////////////////////////
+	// iv, err := encryption.GenerateIV()
+	// if err != nil {
+	// 	log.Fatal(err) /// log fatal or just a return?
+	// }
+
+	// // Create a header
+	// header := models.HeaderAES{
+	// 	FileName: file.Name(),
+	// 	CheckSum: hash,
+	// 	IV:       iv,
+	// }
+
+	// // get a cipher stream
+	// strWriter, err := encryption.EncryptSetupAES(header.IV, password, dstConn)
+	// if err != nil {
+	// 	log.Fatal(err) /// log fatal or just a return?
+	// }
+	//////////////////////////////////// AES business END /////////////////////////////////////
+
+	//////////////////////////////////// ChaCha20 business /////////////////////////////////////
+	salt, err := encryption.GenerateSalt()
+	if err != nil{
+		log.Fatal(err)
+	}
+	nonce, err := encryption.GenerateNonce()
 	if err != nil {
-		log.Fatal(err) /// log fatal or just a return?
+		log.Fatal(err)
+	}
+	strWriter, err := encryption.EncryptSetupChaCha20(salt, nonce, password, dstConn)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	// Create a header
 	header := models.Header{
 		FileName: file.Name(),
 		CheckSum: hash,
-		IV:       iv,
+		Nonce: nonce,
+		Salt: salt,
 	}
+	//////////////////////////////////// AES business /////////////////////////////////////
 
 	if err := sendHeader(dstConn, header); err != nil {
 		log.Printf("failed to send header: %v", err)
 	}
 
-	// get a cipher stream
-	strWriter, err := encryption.EncryptSetup(header.IV, password, dstConn)
-	if err != nil {
-		log.Fatal(err) /// log fatal or just a return?
-	}
 	// encrypt and send data
 	bytesWritten, err := io.Copy(strWriter, file)
 	if err != nil {
