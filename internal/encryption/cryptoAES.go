@@ -3,24 +3,11 @@ package encryption
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
 	"crypto/sha256"
 	"net"
 )
 
-// This file handles the AES encryption/decryption related tasks
-
-// Generates the initilization vector (IV)
-// Returns IV (16bytes)
-func GenerateIV() ([]byte, error) {
-
-	iv := make([]byte, aes.BlockSize)
-	if _, err := rand.Read(iv); err != nil {
-		return nil, err
-	}
-	return iv, nil
-
-}
+// This file includes AES encryption/decryption related functions
 
 /*
 This function returns the cipher stream. On the way there it:
@@ -30,7 +17,7 @@ converts the block to a stream using newCTR.
 Encrypt and Decrypt both share this functionality
 */
 func newCipherStreamAES(iv []byte, password string) (cipher.Stream, error) {
-	
+
 	// Get sha256 sum of password
 	key := sha256.Sum256([]byte(password))
 	// generate new cipher block

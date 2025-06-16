@@ -1,15 +1,14 @@
 package receive
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"ftcli/config"
 	"ftcli/internal/encryption"
 	"ftcli/internal/shared"
-	"ftcli/models"
 	"io"
 	"log"
 	"net"
@@ -55,11 +54,17 @@ func downloadFile(srcConn net.Conn, password string) {
 	log.Printf("Downloading file from %v....", srcConn.RemoteAddr().String())
 
 	// Receive the header
-	hdr, err := receiveHeader(srcConn)
+	hdrJsonBytes, err := receiveHeader(srcConn)
 	if err != nil {
 		log.Printf("failed to receive header: %v", err)
 		return
 	}
+
+	hdr, err := shared.JsonBToHeader(hdrJsonBytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// log.Printf("Filename: %v", hdr.FileName)
 	// log.Printf("sha256 checksum: %v", hdr.CheckSum)
 	// log.Printf("entire header: %v", hdr)
@@ -69,21 +74,28 @@ func downloadFile(srcConn net.Conn, password string) {
 	var resp string
 	fmt.Scanln(&resp)
 	resp = strings.ToLower(resp)
-	if resp != "yes"{
+	if resp != "yes" {
 		srcConn.Close()
 		log.Print("Not downloading...")
 		return
 	}
 
-	/// decrypt with CHACAH20
-	strReader, err := encryption.DecryptSetupChaCha20(hdr.Salt, hdr.Nonce, password, srcConn)
+	// Since our sender only sends the header len, header and ciphertext and then closes the connection
+	// we can simply read the rest of the bytes from the conn
+	cipherText, err := io.ReadAll(srcConn)
 	if err != nil {
-		log.Printf("Decryption setup failed: %v", err)
+		log.Fatal(err)
+	}
+
+	/// decrypt with AEAD
+	plaintext, err := encryption.DecryptAEAD(hdr.Salt, hdr.Nonce, password, cipherText, hdrJsonBytes)
+	if err != nil {
+		log.Printf("Failed to drcrypt: %v", err)
 		return
 	}
 
 	// create the file for saving
-	file, err := os.Create(hdr.FileName)      // what if file with same name already exists?
+	file, err := os.Create(hdr.FileName) // what if file with same name already exists?
 	if err != nil {
 		log.Printf("failed to create file: %v", err)
 		return
@@ -91,7 +103,7 @@ func downloadFile(srcConn net.Conn, password string) {
 	defer file.Close()
 
 	// write to file and get hash of file
-	hash, bytesReceived, err := shared.CopyAndHash(file, strReader)
+	hash, bytesReceived, err := shared.CopyAndHash(file, bytes.NewReader(plaintext))
 	if err != nil {
 		log.Printf("error copying file: %v", err)
 	}
@@ -103,36 +115,29 @@ func downloadFile(srcConn net.Conn, password string) {
 	} else {
 		log.Printf("Hash mismatch!")
 	}
+
 	log.Printf("finished downloading %v", hdr.FileName)
 
 }
 
 // Receive the header
-func receiveHeader(conn net.Conn) (models.Header, error) {
-
-	var hdr models.Header
-	var lenBuf [4]byte
+func receiveHeader(conn net.Conn) ([]byte, error) {
 
 	// read header length
+	var lenBuf [4]byte
 	if _, err := io.ReadFull(conn, lenBuf[:]); err != nil {
-		return models.Header{}, err
+		return nil, err
 	}
 
-	// turn header length into a unsigned (hum0n readable) int
+	// turn header length into a unsigned int
 	headerLen := binary.BigEndian.Uint32(lenBuf[:])
 
-	//log.Printf("STATS FOR NERDS: header len: %v", headerLen)
-
 	// read the jsonbytes
-	jsonBytes := make([]byte, headerLen)
-	if _, err := io.ReadFull(conn, jsonBytes); err != nil {
-		return models.Header{}, err
+	hdrJsonBytes := make([]byte, headerLen)
+	if _, err := io.ReadFull(conn, hdrJsonBytes); err != nil {
+		return nil, err
 	}
 
-	// turn into a struct
-	if err := json.Unmarshal(jsonBytes, &hdr); err != nil {
-		return models.Header{}, err
-	}
+	return hdrJsonBytes, nil
 
-	return hdr, nil
 }

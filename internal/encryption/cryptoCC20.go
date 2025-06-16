@@ -2,49 +2,14 @@ package encryption
 
 import (
 	"crypto/cipher"
-	"crypto/rand"
-	"ftcli/config"
 	"net"
 
-	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/chacha20"
 )
 
+// This file includes ChaCha20 related encryption/decryption functions
 
-// Returns a 16byte salt
-func GenerateSalt() ([]byte, error) {
-
-	salt := make([]byte, 16)
-	if _, err := rand.Read(salt); err != nil {
-		return nil, err
-	}
-	return salt, nil
-
-}
-
-// Returns a 12byte nonce
-func GenerateNonce() ([]byte, error) {
-
-	nonce := make([]byte, chacha20.NonceSize)
-	if _, err := rand.Read(nonce); err != nil {
-		return nil, err
-	}
-	return nonce, nil
-
-}
-
-// Generates a master key
-func GenerateMasterKey(salt []byte, password string) []byte {
-	return argon2.Key(
-		[]byte(password),
-		salt,
-		config.Time,
-		config.Memory,
-		config.Threads,
-		config.KeyLength)
-}
-
-// Returns a new chacha20 cipher stream. Key is generated here.
+// Returns a new chacha20 cipher stream
 func newChaCha20CipherStream(salt []byte, nonce []byte, password string) (*chacha20.Cipher, error) {
 
 	masterKey := GenerateMasterKey(salt, password)
