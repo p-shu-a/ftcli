@@ -51,7 +51,7 @@ func ReceiveFile(ctx context.Context, wg *sync.WaitGroup, password string) {
 // Download the actual file
 func downloadFile(srcConn net.Conn, password string) {
 
-	log.Printf("Downloading file from %v....", srcConn.RemoteAddr().String())
+	config.Dlog.Printf("Downloading file from %v....", srcConn.RemoteAddr().String())
 
 	// Receive the header
 	hdrJsonBytes, err := receiveHeader(srcConn)
@@ -60,14 +60,16 @@ func downloadFile(srcConn net.Conn, password string) {
 		return
 	}
 
+	config.Dlog.Print("receive : pt1")
+	shared.PrintMemUsage()
+
 	hdr, err := shared.JsonBToHeader(hdrJsonBytes)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// log.Printf("Filename: %v", hdr.FileName)
-	// log.Printf("sha256 checksum: %v", hdr.CheckSum)
-	// log.Printf("entire header: %v", hdr)
+	log.Printf("Filename: %v", hdr.FileName)
+	log.Printf("sha256 checksum: %v", hdr.CheckSum)
 
 	// Allow user to accept or decline
 	log.Printf("Continue Download? (yes/no): ")
@@ -80,19 +82,31 @@ func downloadFile(srcConn net.Conn, password string) {
 		return
 	}
 
+	config.Dlog.Print("receive : pt2. after user has accepted dl")
+	shared.PrintMemUsage()
+
 	// Since our sender only sends the header len, header and ciphertext and then closes the connection
 	// we can simply read the rest of the bytes from the conn
 	cipherText, err := io.ReadAll(srcConn)
 	if err != nil {
 		log.Fatal(err)
 	}
+	config.Dlog.Printf("in decryptAEAD. len(ciphertext): %v", len(cipherText))
 
-	/// decrypt with AEAD
+	config.Dlog.Print("receive : pt3 cipher text read")
+	shared.PrintMemUsage()
+
+	/// decrypt with AEAD...after this cipherText slice will be (mostly) overwritten with plaintext
 	plaintext, err := encryption.DecryptAEAD(hdr.Salt, hdr.Nonce, password, cipherText, hdrJsonBytes)
 	if err != nil {
 		log.Printf("Failed to drcrypt: %v", err)
 		return
 	}
+	config.Dlog.Printf("in decryptAEAD. len(plaintext): %v", len(plaintext))
+
+
+	config.Dlog.Print("receive : pt4 plaintext generated")
+	shared.PrintMemUsage()
 
 	// create the file for saving
 	file, err := os.Create(hdr.FileName) // what if file with same name already exists?
@@ -107,8 +121,11 @@ func downloadFile(srcConn net.Conn, password string) {
 	if err != nil {
 		log.Printf("error copying file: %v", err)
 	}
-	log.Printf("successfully copied %d bytes", bytesReceived)
-	log.Printf("hash of file is : %v", hash)
+	config.Dlog.Printf("successfully copied %d bytes", bytesReceived)
+	config.Dlog.Printf("hash of file is : %v", hash)
+
+	config.Dlog.Print("receive : pt5 finished writing to file")
+	shared.PrintMemUsage()
 
 	if hash == hdr.CheckSum {
 		log.Printf("hashes match")

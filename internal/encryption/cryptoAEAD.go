@@ -16,13 +16,14 @@ func EncryptAEAD(salt []byte, nonce []byte, password string, plaintext []byte, a
 		return nil, err
 	}
 
-	cipherText := aead.Seal(nil, nonce, plaintext, adHeader)
+	cipherText := aead.Seal(plaintext[:0], nonce, plaintext, adHeader)
 
 	return cipherText, err
 
 }
 
-// Authenticates the ciphertext and, if legit, decrypts it and returns the plaintext
+// Authenticates the ciphertext and, if legit, decrypts it, and returns the plaintext
+// The decrypted plaintext is stored in the passed cipherText slice (mostly) replacing it
 func DecryptAEAD(salt []byte, nonce []byte, password string, cipherText []byte, jsonHdrBytes []byte) ([]byte, error) {
 
 	key := GenerateMasterKey(salt, password)
@@ -31,7 +32,7 @@ func DecryptAEAD(salt []byte, nonce []byte, password string, cipherText []byte, 
 	if err != nil {
 		return nil, err
 	}
-	plaintext, err := aead.Open(nil, nonce, cipherText, jsonHdrBytes)
+	plaintext, err := aead.Open(cipherText[:0], nonce, cipherText, jsonHdrBytes)
 	if err != nil {
 		return nil, err
 	}

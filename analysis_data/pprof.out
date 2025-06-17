@@ -1,0 +1,196 @@
+heap profile: 7: 63080512 [33: 313878592] @ heap/1048576
+0: 0 [1: 2752512] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 2195456] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 663552] @ 0x1002c7190 0x1002c716d 0x1003a8258 0x1003ac6a4 0x1003a3834 0x1003a356c 0x1003a1d7c 0x1003b5f84 0x1003b6868 0x10038d848 0x10038f374 0x10039636c 0x10038c2bc 0x1001e1dd4
+#	0x1002c718f	compress/flate.NewWriter+0x26f			/usr/local/go/src/compress/flate/deflate.go:663
+#	0x1002c716c	compress/gzip.(*Writer).Write+0x24c		/usr/local/go/src/compress/gzip/gzip.go:191
+#	0x1003a8257	runtime/pprof.(*profileBuilder).build+0x487	/usr/local/go/src/runtime/pprof/proto.go:390
+#	0x1003ac6a3	runtime/pprof.writeHeapProto+0x453		/usr/local/go/src/runtime/pprof/protomem.go:66
+#	0x1003a3833	runtime/pprof.writeHeapInternal+0x233		/usr/local/go/src/runtime/pprof/pprof.go:634
+#	0x1003a356b	runtime/pprof.writeHeap+0x2b			/usr/local/go/src/runtime/pprof/pprof.go:593
+#	0x1003a1d7b	runtime/pprof.(*Profile).WriteTo+0x14b		/usr/local/go/src/runtime/pprof/pprof.go:377
+#	0x1003b5f83	net/http/pprof.handler.ServeHTTP+0x443		/usr/local/go/src/net/http/pprof/pprof.go:272
+#	0x1003b6867	net/http/pprof.Index+0xc7			/usr/local/go/src/net/http/pprof/pprof.go:389
+#	0x10038d847	net/http.HandlerFunc.ServeHTTP+0x37		/usr/local/go/src/net/http/server.go:2294
+#	0x10038f373	net/http.(*ServeMux).ServeHTTP+0x1b3		/usr/local/go/src/net/http/server.go:2822
+#	0x10039636b	net/http.serverHandler.ServeHTTP+0xbb		/usr/local/go/src/net/http/server.go:3301
+#	0x10038c2bb	net/http.(*conn).serve+0x52b			/usr/local/go/src/net/http/server.go:2102
+
+0: 0 [1: 50454528] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 40361984] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 32284672] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 25821184] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 20652032] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [0: 0] @ 0x100250e14 0x100250de1 0x100250660 0x100250661 0x1002977fc 0x1002b3fe8 0x1001e1dd4
+#	0x100250e13	golang.org/x/crypto/chacha20poly1305.sliceForAppend+0x203			/Users/pranshu/go/pkg/mod/golang.org/x/crypto@v0.39.0/chacha20poly1305/chacha20poly1305.go:93
+#	0x100250de0	golang.org/x/crypto/chacha20poly1305.(*chacha20poly1305).openGeneric+0x1d0	/Users/pranshu/go/pkg/mod/golang.org/x/crypto@v0.39.0/chacha20poly1305/chacha20poly1305_generic.go:68
+#	0x10025065f	golang.org/x/crypto/chacha20poly1305.(*chacha20poly1305).open+0x4f		/Users/pranshu/go/pkg/mod/golang.org/x/crypto@v0.39.0/chacha20poly1305/chacha20poly1305_noasm.go:14
+#	0x100250660	golang.org/x/crypto/chacha20poly1305.(*chacha20poly1305).Open+0x50		/Users/pranshu/go/pkg/mod/golang.org/x/crypto@v0.39.0/chacha20poly1305/chacha20poly1305.go:82
+#	0x1002977fb	ftcli/internal/encryption.DecryptAEAD+0x17b					/Users/pranshu/git/ftcli/internal/encryption/cryptoAEAD.go:34
+#	0x1002b3fe7	ftcli/internal/receive.downloadFile+0x497					/Users/pranshu/git/ftcli/internal/receive/receive.go:100
+
+0: 0 [1: 13205504] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 10559488] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 8445952] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 6750208] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 5398528] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [0: 0] @ 0x1002960a0 0x100295cf4 0x100297740 0x1002976e5 0x1002976d1 0x1002b3fe8 0x1001e1dd4
+#	0x10029609f	golang.org/x/crypto/argon2.initBlocks+0x4f		/Users/pranshu/go/pkg/mod/golang.org/x/crypto@v0.39.0/argon2/argon2.go:158
+#	0x100295cf3	golang.org/x/crypto/argon2.deriveKey+0x133		/Users/pranshu/go/pkg/mod/golang.org/x/crypto@v0.39.0/argon2/argon2.go:113
+#	0x10029773f	golang.org/x/crypto/argon2.Key+0xbf			/Users/pranshu/go/pkg/mod/golang.org/x/crypto@v0.39.0/argon2/argon2.go:73
+#	0x1002976e4	ftcli/internal/encryption.GenerateMasterKey+0x64	/Users/pranshu/git/ftcli/internal/encryption/helpers.go:48
+#	0x1002976d0	ftcli/internal/encryption.DecryptAEAD+0x50		/Users/pranshu/git/ftcli/internal/encryption/cryptoAEAD.go:28
+#	0x1002b3fe7	ftcli/internal/receive.downloadFile+0x497		/Users/pranshu/git/ftcli/internal/receive/receive.go:100
+
+0: 0 [1: 4317184] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 16515072] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 3448832] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 1753088] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 1400832] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 1114112] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 884736] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 73728] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 557056] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 442368] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 352256] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 221184] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+0: 0 [1: 172032] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+1: 64 [1: 64] @ 0x1001f0218 0x1001f0408 0x10022b1c8 0x1002299f0 0x100270208 0x10027f6e4 0x10027e81c 0x1002b385c 0x1001e1dd4
+#	0x1001f0217	syscall.anyToSockaddr+0x117			/usr/local/go/src/syscall/syscall_bsd.go:265
+#	0x1001f0407	syscall.Accept+0x67				/usr/local/go/src/syscall/syscall_bsd.go:290
+#	0x10022b1c7	internal/poll.accept+0x27			/usr/local/go/src/internal/poll/sys_cloexec.go:24
+#	0x1002299ef	internal/poll.(*FD).Accept+0x15f		/usr/local/go/src/internal/poll/fd_unix.go:611
+#	0x100270207	net.(*netFD).accept+0x27			/usr/local/go/src/net/fd_unix.go:172
+#	0x10027f6e3	net.(*TCPListener).accept+0x23			/usr/local/go/src/net/tcpsock_posix.go:159
+#	0x10027e81b	net.(*TCPListener).Accept+0x2b			/usr/local/go/src/net/tcpsock.go:380
+#	0x1002b385b	ftcli/internal/receive.ReceiveFile+0x1eb	/Users/pranshu/git/ftcli/internal/receive/receive.go:37
+
+2: 4096 [2: 4096] @ 0x1001a969c 0x1001aa2b4 0x1001aa980 0x1001da164 0x1001ad614 0x1001adae8 0x1001a8b78 0x1001a8a84 0x1001df950
+#	0x1001a969b	runtime.allocm+0x9b		/usr/local/go/src/runtime/proc.go:2233
+#	0x1001aa2b3	runtime.newm+0x43		/usr/local/go/src/runtime/proc.go:2769
+#	0x1001aa97f	runtime.startm+0x13f		/usr/local/go/src/runtime/proc.go:2995
+#	0x1001da163	runtime.wakep+0x173		/usr/local/go/src/runtime/proc.go:3142
+#	0x1001ad613	runtime.resetspinning+0x73	/usr/local/go/src/runtime/proc.go:3882
+#	0x1001adae7	runtime.schedule+0x107		/usr/local/go/src/runtime/proc.go:4035
+#	0x1001a8b77	runtime.mstart1+0xd7		/usr/local/go/src/runtime/proc.go:1862
+#	0x1001a8a83	runtime.mstart0+0x63		/usr/local/go/src/runtime/proc.go:1808
+#	0x1001df94f	runtime.mstart+0xf		/usr/local/go/src/runtime/asm_arm64.s:129
+
+3: 6144 [3: 6144] @ 0x1001a969c 0x1001aa2b4 0x1001aa980 0x1001da164 0x1001ad614 0x1001adae8 0x1001adf70 0x1001df9c4
+#	0x1001a969b	runtime.allocm+0x9b		/usr/local/go/src/runtime/proc.go:2233
+#	0x1001aa2b3	runtime.newm+0x43		/usr/local/go/src/runtime/proc.go:2769
+#	0x1001aa97f	runtime.startm+0x13f		/usr/local/go/src/runtime/proc.go:2995
+#	0x1001da163	runtime.wakep+0x173		/usr/local/go/src/runtime/proc.go:3142
+#	0x1001ad613	runtime.resetspinning+0x73	/usr/local/go/src/runtime/proc.go:3882
+#	0x1001adae7	runtime.schedule+0x107		/usr/local/go/src/runtime/proc.go:4035
+#	0x1001adf6f	runtime.park_m+0x2af		/usr/local/go/src/runtime/proc.go:4141
+#	0x1001df9c3	runtime.mcall+0x53		/usr/local/go/src/runtime/asm_arm64.s:193
+
+1: 63070208 [1: 63070208] @ 0x100225bb4 0x1002b3f10 0x1001e1dd4
+#	0x100225bb3	io.ReadAll+0xc3					/usr/local/go/src/io/io.go:723
+#	0x1002b3f0f	ftcli/internal/receive.downloadFile+0x3bf	/Users/pranshu/git/ftcli/internal/receive/receive.go:91
+
+
+# runtime.MemStats
+# Alloc = 122540984
+# TotalAlloc = 408987552
+# Sys = 248867128
+# Lookups = 0
+# Mallocs = 2045
+# Frees = 1170
+# HeapAlloc = 122540984
+# HeapSys = 242810880
+# HeapIdle = 119734272
+# HeapInuse = 123076608
+# HeapReleased = 35381248
+# HeapObjects = 875
+# Stack = 458752 / 458752
+# MSpan = 84640 / 97920
+# MCache = 12080 / 15704
+# BuckHashSys = 1450115
+# GCSys = 2651720
+# OtherSys = 1382037
+# NextGC = 245257922
+# LastGC = 1750088507028143000
+# PauseNs = [74958 59250 45084 111167 30958 29750 105208 34499 33500 31166 16125 37959 19501 14042 18959 30708 20042 31750 40833 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+# PauseEnd = [1750088506882720000 1750088506884819000 1750088506886344000 1750088506887002000 1750088506888015000 1750088506890440000 1750088506891370000 1750088506892830000 1750088506896361000 1750088506897791000 1750088506899174000 1750088506902258000 1750088506904063000 1750088506906982000 1750088506913444000 1750088506916638000 1750088506921118000 1750088506930541000 1750088507028143000 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+# NumGC = 19
+# NumForcedGC = 0
+# GCCPUFraction = 7.865396607952307e-05
+# DebugGC = false
+# MaxRSS = 229031936
