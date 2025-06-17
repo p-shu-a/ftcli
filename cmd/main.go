@@ -5,10 +5,10 @@ import (
 	"flag"
 	"ftcli/internal/receive"
 	"ftcli/internal/send"
-	_ "net/http/pprof"
+	"ftcli/internal/shared"
 	"log"
 	"net"
-	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"strings"
 	"sync"
@@ -16,9 +16,8 @@ import (
 
 func main() {
 
-	go func() {
-    	log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
+	// run pprof
+	go shared.RunPProf()
 
 	// ideally, you can just do something like "--sender" or "--recieve" without the '-role' tag
 	role := flag.String("role", "", "Designate yourself as sender (send) or receiver (recv)")
@@ -66,8 +65,8 @@ func main() {
 		}
 
 		wg.Add(1)
-		if err := send.SendFile(context.TODO(), &wg, file, peerAddr, *pass); err != nil{
-			log.Fatal("failed to send file: %v", err)
+		if err := send.SendFile(context.TODO(), &wg, file, peerAddr, *pass); err != nil {
+			log.Fatalf("failed to send file: %v", err)
 		}
 	} else {
 

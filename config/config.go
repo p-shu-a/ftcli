@@ -7,9 +7,13 @@ import (
 
 // Shared configs live here
 
-var ReceivePort int = 7891
+// Port number on which the receving peer listens
+const ReceivePort = 7891
 
-// Cost settings for argon2
+// File chunk size, in bytes, for sending encrypted files in chunks
+const FileChunkSize = 4096
+
+// Cost settings for argon2. These are standard values.
 var (
 	Time      uint32 = 3
 	Memory    uint32 = 32 * 1024
@@ -17,11 +21,6 @@ var (
 	KeyLength uint32 = 32
 )
 
+// Debug logger. set out to io.discard to stop logging
 var Dlog = log.New(os.Stdout, "DEBUG: ", log.Lmsgprefix)
-//var debug = true
-
-func EnableDebugLog(debug bool){
-	if debug {
-		Dlog.SetOutput(os.Stdout)
-	}
-}
+var Slog = log.New(os.Stdout, "STATs: ", log.Lmsgprefix)

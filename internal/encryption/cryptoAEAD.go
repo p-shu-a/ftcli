@@ -7,9 +7,7 @@ import (
 // This file includes AEAD related encryption/decryption functions
 
 // Encrypt the plaintext using ChaCha20 and generate a Poly1305 MAC. The Mac is sealed with the cipher text.
-func EncryptAEAD(salt []byte, nonce []byte, password string, plaintext []byte, adHeader []byte) ([]byte, error) {
-
-	key := GenerateMasterKey(salt, password)
+func EncryptAEAD(nonce []byte, key []byte, plaintext []byte, adHeader []byte) ([]byte, error) {
 
 	aead, err := chacha20poly1305.New(key)
 	if err != nil {
@@ -24,9 +22,7 @@ func EncryptAEAD(salt []byte, nonce []byte, password string, plaintext []byte, a
 
 // Authenticates the ciphertext and, if legit, decrypts it, and returns the plaintext
 // The decrypted plaintext is stored in the passed cipherText slice (mostly) replacing it
-func DecryptAEAD(salt []byte, nonce []byte, password string, cipherText []byte, jsonHdrBytes []byte) ([]byte, error) {
-
-	key := GenerateMasterKey(salt, password)
+func DecryptAEAD(nonce []byte, key []byte, cipherText []byte, jsonHdrBytes []byte) ([]byte, error) {
 
 	aead, err := chacha20poly1305.New(key)
 	if err != nil {
@@ -36,7 +32,6 @@ func DecryptAEAD(salt []byte, nonce []byte, password string, cipherText []byte, 
 	if err != nil {
 		return nil, err
 	}
-
 	return plaintext, nil
 
 }

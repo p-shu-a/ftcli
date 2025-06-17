@@ -2,6 +2,8 @@ package send
 
 import (
 	"context"
+	"encoding/binary"
+	"errors"
 	"fmt"
 	"ftcli/config"
 	"ftcli/internal/encryption"
@@ -24,7 +26,7 @@ func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP
 	}
 	defer dstConn.Close()
 
-	config.Dlog.Print("send: pt1")
+	config.Slog.Print("send: pt1")
 	shared.PrintMemUsage()
 
 	hash, err := shared.FileChecksumSHA265(file)
@@ -32,6 +34,8 @@ func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP
 		return fmt.Errorf("failed to generate sha256 checksum of file: %v", err)
 	}
 
+	// Sending InfoHeader
+	// Filename, Checksum, and Salt are sent via info-header. They are only sent once.
 	salt, err := encryption.GenerateSalt()
 	if err != nil {
 		return fmt.Errorf("failed to generate salt: %v", err)
@@ -40,68 +44,82 @@ func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP
 	if err != nil {
 		return fmt.Errorf("failed to generate nonce: %v", err)
 	}
-
-	header := models.Header{
+	baseNonce := nonce[:4]
+	masterKey := encryption.GenerateMasterKey(salt, password)
+	info := models.Header{
 		FileName: file.Name(),
 		CheckSum: hash,
-		Nonce:    nonce,
 		Salt:     salt,
+		Nonce:    baseNonce,
+	}
+	infoHdrBytes, _ := shared.HeaderToJsonB(info)
+	infoLen := shared.GetHeaderLength(infoHdrBytes)
+
+	if err := sendHeader(dstConn, infoHdrBytes, infoLen); err != nil {
+		return err
 	}
 
-	hdrJsonBytes, err := shared.HeaderToJsonB(header)
-	if err != nil {
-		return fmt.Errorf("failed to convert header to json: %v", err)
+	// Total bytes written to dst
+	var totalBytesWritten int = 0
+	// Since the encrypted files are sent in chunks, keep track of how many chunks are sent
+	var chunkIndex int = 0
+	// plaintext is read from file in chunks that are FileChunkSize long
+	plaintextChunk := make([]byte, config.FileChunkSize)
+
+	// This loop repeatedly chunks the plaintext data, sends a related header, and then sends the encypted data
+	for {
+
+		// Read from file. If file can't be read, proceed no further
+		////// what if there is stuff still in the buffer from before? how do you clear that?
+		n, err := file.Read(plaintextChunk)
+
+		// following ifs need improvement
+		if err != nil {
+			if errors.Is(err, io.EOF) { // n would be 0 here
+				break
+			}
+			return err
+		}
+
+		/// unique nonce every time, or same once  once + chunkIdx?
+		binary.BigEndian.PutUint64(nonce[4:], uint64(chunkIndex))
+		if err != nil {
+			return fmt.Errorf("failed to generate nonce: %v", err)
+		}
+
+		// Package the nonce into the header
+		header := models.Header{
+			Nonce: nonce,
+		}
+		hdrJsonBytes, err := shared.HeaderToJsonB(header)
+		if err != nil {
+			return fmt.Errorf("failed to convert header to json: %v", err)
+		}
+		hdrLen := shared.GetHeaderLength(hdrJsonBytes)
+
+		// Generate the cipherText
+		cipherText, err := encryption.EncryptAEAD(nonce, masterKey, plaintextChunk[:n], hdrJsonBytes)
+		if err != nil {
+			return fmt.Errorf("failed to encrypt file: %v", err)
+		}
+
+		// send the header
+		if err := sendHeader(dstConn, hdrJsonBytes, hdrLen); err != nil {
+			return fmt.Errorf("failed to send header: %v", err)
+		}
+
+		// send the cipher text
+		bytesWritten, err := dstConn.Write(cipherText)
+		if err != nil {
+			return fmt.Errorf("failed to write encypted file contents to remote: %v", err)
+		}
+		totalBytesWritten += bytesWritten
+
+		chunkIndex++
 	}
-
-	hdrLen := shared.GetHeaderLength(hdrJsonBytes)
-
-	config.Dlog.Print("send: pt2")
+	log.Printf("wrote %d bytes to remote", totalBytesWritten)
+	config.Slog.Print("send: pt6.end")
 	shared.PrintMemUsage()
-
-	fileInfo, err := file.Stat()
-	if err != nil {
-		return fmt.Errorf("failed to get file info: %v", err)
-	}
-
-	// create a byte-slice of the same size as the file to contain the plaintext
-	plaintext := make([]byte, fileInfo.Size(), fileInfo.Size()+16)
-	if _, err := io.ReadFull(file, plaintext); err != nil {
-		return fmt.Errorf("failed to read from file: %v", err)
-	}
-
-	config.Dlog.Printf("plaintext size: %v\n", len(plaintext))
-	config.Dlog.Printf("plaintext cap: %v\n", cap(plaintext))
-
-	config.Dlog.Print("send: pt3. after readiing plaintext")
-	shared.PrintMemUsage()
-
-	// Generate the cipher texts
-	cipherText, err := encryption.EncryptAEAD(salt, nonce, password, plaintext, hdrJsonBytes)
-	if err != nil {
-		return fmt.Errorf("failed to encrypt file: %v", err)
-	}
-
-	config.Dlog.Printf("ciphertext size: %v\n", len(cipherText))
-	config.Dlog.Print("send: pt4. after generrating ciphertext")
-	shared.PrintMemUsage()
-
-	// send the header
-	if err := sendHeader(dstConn, hdrJsonBytes, hdrLen); err != nil {
-		return fmt.Errorf("failed to send header: %v", err)
-	}
-
-	config.Dlog.Print("send: pt5")
-	shared.PrintMemUsage()
-
-	// send the cipher text
-	bytesWritten, err := dstConn.Write(cipherText)
-	if err != nil {
-		return fmt.Errorf("failed to write encypted file contents to remote: %v", err)
-	}
-
-	config.Dlog.Print("send: pt6.end")
-	shared.PrintMemUsage()
-	log.Printf("wrote %d bytes to remote", bytesWritten)
 
 	return nil
 }
@@ -121,8 +139,9 @@ func dialRemote(rip net.IP) (net.Conn, error) {
 
 }
 
-// This function writes the header to the peer's conn
-// Takes the net.conn to the peer, header in the form of json-encoded bytes, and the length of the header in bytes.
+// This function writes the header to the peer's conn.
+// It sends: the length of the header and then the header contents
+// Params are: net.conn to the peer, length of header in bytes, and header in the form of json-encoded bytes
 func sendHeader(dst net.Conn, hdrJsonBytes []byte, hdrLen []byte) error {
 
 	// Let peer know how large the header they're about to receive is

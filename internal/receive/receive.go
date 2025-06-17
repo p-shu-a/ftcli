@@ -1,7 +1,6 @@
 package receive
 
 import (
-	"bytes"
 	"context"
 	"encoding/binary"
 	"errors"
@@ -9,6 +8,7 @@ import (
 	"ftcli/config"
 	"ftcli/internal/encryption"
 	"ftcli/internal/shared"
+	"ftcli/models"
 	"io"
 	"log"
 	"net"
@@ -18,7 +18,7 @@ import (
 )
 
 // receive mode is relitively simple. just opens a listener and waits to get
-func ReceiveFile(ctx context.Context, wg *sync.WaitGroup, password string) {
+func ReceiveFile(ctx context.Context, wg *sync.WaitGroup, password string) error {
 	defer wg.Done()
 
 	localLn := net.TCPAddr{
@@ -28,116 +28,131 @@ func ReceiveFile(ctx context.Context, wg *sync.WaitGroup, password string) {
 
 	ln, err := net.ListenTCP("tcp", &localLn)
 	if err != nil {
-		log.Fatalf("failed to create listener: %v", err)
-	} else {
-		log.Printf("Waiting for file transfer on port: %d", localLn.Port)
+		return fmt.Errorf("failed to create listener: %v", err)
 	}
 
 	for {
+		log.Printf("Receiving on port: %d", localLn.Port)
 		conn, err := ln.Accept()
 		if err != nil {
 			// what are the possible errors?
 			if errors.Is(err, net.ErrClosed) {
-				return
+				return err
 			}
 			continue
 		}
-		log.Printf("Receiving on port: %d", localLn.Port)
-		// Download accept/decline should be here
-		go downloadFile(conn, password)
+		inforHdr, err := receiveHeader(conn) // perhaps receiveHeader ad JsonBToHeader should be consolidated
+		if err != nil {
+			return err
+		}
+		hdr, err := shared.JsonBToHeader(inforHdr)
+		if err != nil {
+			return err
+		}
+
+		log.Printf("Filename: %v", hdr.FileName)
+		log.Printf("SHA256 checksum: %v", hdr.CheckSum)
+
+		// Allow user to accept or decline
+		log.Printf("Continue Download? (yes/no): ")
+		var resp string
+		fmt.Scanln(&resp)
+		resp = strings.ToLower(resp)
+		if resp != "yes" {
+			// conn.Close() /// should i close the conn here?
+			log.Print("Not downloading...")
+			continue
+		} else {
+			// not too sure it needs to be a Go func
+			go downloadFile(conn, password, hdr)
+		}
 	}
 }
 
 // Download the actual file
-func downloadFile(srcConn net.Conn, password string) {
+func downloadFile(srcConn net.Conn, password string, infoHdr *models.Header) {
 
 	config.Dlog.Printf("Downloading file from %v....", srcConn.RemoteAddr().String())
 
-	// Receive the header
-	hdrJsonBytes, err := receiveHeader(srcConn)
-	if err != nil {
-		log.Printf("failed to receive header: %v", err)
-		return
-	}
-
-	config.Dlog.Print("receive : pt1")
-	shared.PrintMemUsage()
-
-	hdr, err := shared.JsonBToHeader(hdrJsonBytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Printf("Filename: %v", hdr.FileName)
-	log.Printf("sha256 checksum: %v", hdr.CheckSum)
-
-	// Allow user to accept or decline
-	log.Printf("Continue Download? (yes/no): ")
-	var resp string
-	fmt.Scanln(&resp)
-	resp = strings.ToLower(resp)
-	if resp != "yes" {
-		srcConn.Close()
-		log.Print("Not downloading...")
-		return
-	}
-
-	config.Dlog.Print("receive : pt2. after user has accepted dl")
-	shared.PrintMemUsage()
-
-	// Since our sender only sends the header len, header and ciphertext and then closes the connection
-	// we can simply read the rest of the bytes from the conn
-	cipherText, err := io.ReadAll(srcConn)
-	if err != nil {
-		log.Fatal(err)
-	}
-	config.Dlog.Printf("in decryptAEAD. len(ciphertext): %v", len(cipherText))
-
-	config.Dlog.Print("receive : pt3 cipher text read")
-	shared.PrintMemUsage()
-
-	/// decrypt with AEAD...after this cipherText slice will be (mostly) overwritten with plaintext
-	plaintext, err := encryption.DecryptAEAD(hdr.Salt, hdr.Nonce, password, cipherText, hdrJsonBytes)
-	if err != nil {
-		log.Printf("Failed to drcrypt: %v", err)
-		return
-	}
-	config.Dlog.Printf("in decryptAEAD. len(plaintext): %v", len(plaintext))
-
-
-	config.Dlog.Print("receive : pt4 plaintext generated")
+	config.Dlog.Print("receive : start")
 	shared.PrintMemUsage()
 
 	// create the file for saving
-	file, err := os.Create(hdr.FileName) // what if file with same name already exists?
+	file, err := os.Create(infoHdr.FileName) // what if file with same name already exists?
 	if err != nil {
 		log.Printf("failed to create file: %v", err)
 		return
 	}
 	defer file.Close()
 
-	// write to file and get hash of file
-	hash, bytesReceived, err := shared.CopyAndHash(file, bytes.NewReader(plaintext))
-	if err != nil {
-		log.Printf("error copying file: %v", err)
-	}
-	config.Dlog.Printf("successfully copied %d bytes", bytesReceived)
-	config.Dlog.Printf("hash of file is : %v", hash)
+	masterkey := encryption.GenerateMasterKey(infoHdr.Salt, password)
+	cipherText := make([]byte, config.FileChunkSize+16)
+	// keeps track of chunks received
+	var chunkCtr int = 0
 
-	config.Dlog.Print("receive : pt5 finished writing to file")
+	for {
+
+		// receive header from sending peer
+		hdrJsonBytes, err := receiveHeader(srcConn)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				config.Dlog.Printf("got EOF from remote, breaking")
+				break
+			}
+			log.Printf("failed to receive header: %v", err)
+			return
+		}
+
+		hdr, err := shared.JsonBToHeader(hdrJsonBytes)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// From remote read cipherText
+		n, err := srcConn.Read(cipherText)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Decrypt the cipherText
+		plaintext, err := encryption.DecryptAEAD(hdr.Nonce, masterkey, cipherText[:n], hdrJsonBytes)
+		if err != nil {
+			log.Printf("failed to drcrypt: %v", err)
+			// if there is an issue decrypting, close and remove the created file
+			file.Close()
+			os.Remove(file.Name())
+			return
+		}
+
+		// Write plaintext to file
+		_, err = file.Write(plaintext)
+		if err != nil {
+			log.Printf("failed to write plaintext to file: %v", err)
+			return
+		}
+
+		chunkCtr++
+	}
+
+	config.Dlog.Print("receive : end")
 	shared.PrintMemUsage()
 
-	if hash == hdr.CheckSum {
+	log.Printf("finished downloading %v", infoHdr.FileName)
+	hash, err := shared.FileChecksumSHA265(file)
+	if err != nil {
+		log.Printf("failed to generate hash for file: %v", err)
+		return
+	}
+
+	if hash == infoHdr.CheckSum {
 		log.Printf("hashes match")
 	} else {
 		log.Printf("Hash mismatch!")
 	}
-
-	log.Printf("finished downloading %v", hdr.FileName)
-
 }
 
-// Receive the header
+// Helper to read header coming from remote, clean it up and return header json bytes
+// First comes the header length. Then comes the header. Read header-len from conn to get header
 func receiveHeader(conn net.Conn) ([]byte, error) {
 
 	// read header length

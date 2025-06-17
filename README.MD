@@ -22,3 +22,4 @@
 - if the download is interupted, you should be able to resume from there you left off.
 - improve the syntax of the command:
     - `ftcli -send -rip 192.168.60.70 -f /loc/to/file` (prompted for pass)
+- parallel processing for super-large files? files over X chunks in size

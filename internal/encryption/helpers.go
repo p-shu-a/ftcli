@@ -35,6 +35,11 @@ func GenerateSalt() ([]byte, error) {
 // Returns a 12byte nonce
 func GenerateNonce() ([]byte, error) {
 
+	// This mighbe be why i'm still getting high mem-use on the send side.
+	// nonces are read from the header on the receive side.
+	// This could be taking up unncessary memory. how to use this in a more memory efficient way?
+	// OR OR OR
+	// i should send just once nonce with a counter
 	nonce := make([]byte, chacha20.NonceSize)
 	if _, err := rand.Read(nonce); err != nil {
 		return nil, err
