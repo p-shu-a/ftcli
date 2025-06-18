@@ -17,7 +17,8 @@ import (
 	"sync"
 )
 
-// receive mode is relitively simple. just opens a listener and waits to get
+// Creates a listener and gets user input on whether to accept file download or not
+// If user accepts download, calls downloadFile
 func ReceiveFile(ctx context.Context, wg *sync.WaitGroup, password string) error {
 	defer wg.Done()
 
@@ -50,7 +51,8 @@ func ReceiveFile(ctx context.Context, wg *sync.WaitGroup, password string) error
 			return err
 		}
 
-		log.Printf("Filename: %v", hdr.FileName)
+		log.Printf("Download from  : %v", conn.RemoteAddr().String())
+		log.Printf("Filename       : %v", hdr.FileName)
 		log.Printf("SHA256 checksum: %v", hdr.CheckSum)
 
 		// Allow user to accept or decline
@@ -74,16 +76,41 @@ func downloadFile(srcConn net.Conn, password string, infoHdr *models.Header) {
 
 	config.Dlog.Printf("Downloading file from %v....", srcConn.RemoteAddr().String())
 
-	config.Dlog.Print("receive : start")
-	shared.PrintMemUsage()
+	// Do some file name validation
+	var file *os.File
+	var ctr int = 1
+	for {
+		if _, err := os.Stat(infoHdr.FileName); err != nil {
+			// File does not exists, create it
+			file, err = os.Create(infoHdr.FileName)
+			if err != nil {
+				log.Printf("failed to create file: %v", err)
+				return
+			}
+			defer file.Close()
+			break
+		} else {
+			// Original file already exists.
+			// Find a new name for the file
+			newName := shared.SuggestNewFileName(infoHdr.FileName, ctr)
 
-	// create the file for saving
-	file, err := os.Create(infoHdr.FileName) // what if file with same name already exists?
-	if err != nil {
-		log.Printf("failed to create file: %v", err)
-		return
+			// Check if new name already exists
+			if _, err := os.Stat(newName); err != nil {
+				log.Printf("File with name %v already exists. Setting new name: %v", infoHdr.FileName, newName)
+				file, err = os.Create(newName)
+				if err != nil {
+					log.Printf("failed to create file: %v", err)
+					return
+				}
+				defer file.Close()
+				break
+			} else {
+				// new selected name also exists, try again loop
+				ctr++
+				continue
+			}
+		}
 	}
-	defer file.Close()
 
 	masterkey := encryption.GenerateMasterKey(infoHdr.Salt, password)
 	cipherText := make([]byte, config.FileChunkSize+16)
@@ -137,13 +164,15 @@ func downloadFile(srcConn net.Conn, password string, infoHdr *models.Header) {
 	config.Dlog.Print("receive : end")
 	shared.PrintMemUsage()
 
-	log.Printf("finished downloading %v", infoHdr.FileName)
+	log.Printf("finished downloading %v", file.Name())
 	hash, err := shared.FileChecksumSHA265(file)
 	if err != nil {
 		log.Printf("failed to generate hash for file: %v", err)
 		return
 	}
 
+	log.Printf("hash from infoHdr: %v", infoHdr.CheckSum)
+	log.Printf("hash of DLed File: %v", hash)
 	if hash == infoHdr.CheckSum {
 		log.Printf("hashes match")
 	} else {

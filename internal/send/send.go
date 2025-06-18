@@ -13,6 +13,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -26,20 +27,25 @@ func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP
 	}
 	defer dstConn.Close()
 
-	config.Slog.Print("send: pt1")
-	shared.PrintMemUsage()
-
 	hash, err := shared.FileChecksumSHA265(file)
 	if err != nil {
 		return fmt.Errorf("failed to generate sha256 checksum of file: %v", err)
 	}
 
 	// Sending InfoHeader
-	// Filename, Checksum, and Salt are sent via info-header. They are only sent once.
+	// Filename, Checksum, and Salt are sent via info-header. They are only sent once per file.
 	salt, err := encryption.GenerateSalt()
 	if err != nil {
 		return fmt.Errorf("failed to generate salt: %v", err)
 	}
+
+	/*
+		Note regarding nonce:
+		Instead of sending a new nonce with every header. We're sending baseNonce + chunkIndex
+		A nonce does not need to be random, but it does need to be unique. The counter is unique
+		The larger the files, the more chunks you have, and the more likely that you'll have a nonce collision.
+		The RFC says use a 4byte-nonce and a counter...so its fine I guess
+	*/
 	nonce, err := encryption.GenerateNonce()
 	if err != nil {
 		return fmt.Errorf("failed to generate nonce: %v", err)
@@ -47,11 +53,13 @@ func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP
 	baseNonce := nonce[:4]
 	masterKey := encryption.GenerateMasterKey(salt, password)
 	info := models.Header{
-		FileName: file.Name(),
+		FileName: filepath.Base(file.Name()), // just the filename.ext
 		CheckSum: hash,
 		Salt:     salt,
 		Nonce:    baseNonce,
 	}
+
+
 	infoHdrBytes, _ := shared.HeaderToJsonB(info)
 	infoLen := shared.GetHeaderLength(infoHdrBytes)
 
@@ -70,7 +78,6 @@ func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP
 	for {
 
 		// Read from file. If file can't be read, proceed no further
-		////// what if there is stuff still in the buffer from before? how do you clear that?
 		n, err := file.Read(plaintextChunk)
 
 		// following ifs need improvement
@@ -81,17 +88,17 @@ func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP
 			return err
 		}
 
-		/// unique nonce every time, or same once  once + chunkIdx?
+		// Add the chunkIndex to nonce
 		binary.BigEndian.PutUint64(nonce[4:], uint64(chunkIndex))
 		if err != nil {
 			return fmt.Errorf("failed to generate nonce: %v", err)
 		}
 
 		// Package the nonce into the header
-		header := models.Header{
+		chunkHdr := models.Header{
 			Nonce: nonce,
 		}
-		hdrJsonBytes, err := shared.HeaderToJsonB(header)
+		hdrJsonBytes, err := shared.HeaderToJsonB(chunkHdr)
 		if err != nil {
 			return fmt.Errorf("failed to convert header to json: %v", err)
 		}

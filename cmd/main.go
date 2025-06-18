@@ -71,7 +71,9 @@ func main() {
 	} else {
 
 		wg.Add(1)
-		receive.ReceiveFile(context.TODO(), &wg, *pass)
+		if err := receive.ReceiveFile(context.TODO(), &wg, *pass); err != nil{
+			log.Fatal(err)
+		}
 	}
 
 	wg.Wait()
