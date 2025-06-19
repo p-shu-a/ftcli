@@ -11,7 +11,7 @@ import (
 const ReceivePort = 7891
 
 // File chunk size, in bytes, for sending encrypted files in chunks
-const FileChunkSize = 4096
+const FileChunkSize uint = 4096
 
 // Cost settings for argon2. These are standard values.
 var (
