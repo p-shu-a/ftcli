@@ -11,7 +11,7 @@ import (
 )
 
 // Test CopyAndHash's copy from reader to writer and hash generation
-func TestCopyAndHash(t *testing.T){
+func TestCopyAndHash(t *testing.T) {
 
 	// create reader and writer
 	fileText := "This is a test\n"
@@ -24,12 +24,12 @@ func TestCopyAndHash(t *testing.T){
 		t.Fatal(err)
 	}
 	fileChkSum := fmt.Sprintf("%x", hash.Sum(nil))
-	
+
 	// reset to the top of the reader
 	reader.Seek(0, io.SeekStart)
 
 	// copy from reader to writer and get hash of transfered contents
-	retHashStr, _ , err := CopyAndHash(&writer, reader)
+	retHashStr, _, err := CopyAndHash(&writer, reader)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,13 +37,13 @@ func TestCopyAndHash(t *testing.T){
 	// compare the values
 	if retHashStr != fileChkSum {
 		t.Errorf("Hashes don't match.\nExpected Hash: %v\nReturned Hash: %v", fileChkSum, retHashStr)
-	}else{
+	} else {
 		t.Logf("Hashes match.\nExpected Hash: %v\nReturned Hash: %v", fileChkSum, retHashStr)
 	}
 }
 
 // Test FileChecksum ability to return real hash
-func TestFileChecksum(t *testing.T){
+func TestFileChecksum(t *testing.T) {
 
 	// create temp file in tempdir
 	file, err := os.CreateTemp(os.TempDir(), "testfile.*")
@@ -61,21 +61,21 @@ func TestFileChecksum(t *testing.T){
 
 	// write some text to the file
 	fileText := "This is a test\n"
-	byteText := []byte(fileText) 
+	byteText := []byte(fileText)
 	file.Write(byteText)
-	if err != nil{
+	if err != nil {
 		t.Fatal(err)
 	}
-	
+
 	// move cursor to the top of the file
-	file.Seek(0,io.SeekStart)
+	file.Seek(0, io.SeekStart)
 
 	// get the hash for the file
 	hash := sha256.New()
-	if _ , err = io.Copy(hash, file); err != nil {
+	if _, err = io.Copy(hash, file); err != nil {
 		t.Fatal(err)
 	}
-	sum := fmt.Sprintf("%x",hash.Sum(nil))
+	sum := fmt.Sprintf("%x", hash.Sum(nil))
 
 	// use the function to get the checksum of the file
 	chkSum, err := FileChecksumSHA265(file)
@@ -85,7 +85,7 @@ func TestFileChecksum(t *testing.T){
 
 	if chkSum != sum {
 		t.Errorf("Hashes don't match.\nExpected Hash: %v\nReturned Hash: %v", sum, chkSum)
-	}else{
+	} else {
 		t.Logf("Hashes match.\nExpected Hash: %v\nReturned Hash: %v", sum, chkSum)
 	}
 }
