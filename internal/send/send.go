@@ -59,7 +59,6 @@ func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP
 		Nonce:    baseNonce,
 	}
 
-
 	infoHdrBytes, _ := shared.HeaderToJsonB(info)
 	infoLen := shared.GetHeaderLength(infoHdrBytes)
 
@@ -90,9 +89,6 @@ func SendFile(ctx context.Context, wg *sync.WaitGroup, file *os.File, rip net.IP
 
 		// Add the chunkIndex to nonce
 		binary.BigEndian.PutUint64(nonce[4:], uint64(chunkIndex))
-		if err != nil {
-			return fmt.Errorf("failed to generate nonce: %v", err)
-		}
 
 		// Package the nonce into the header
 		chunkHdr := models.Header{
