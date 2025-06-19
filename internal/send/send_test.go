@@ -3,6 +3,7 @@ package send
 import (
 	"encoding/binary"
 	"encoding/json"
+	"ftcli/internal/shared"
 	"ftcli/models"
 	"io"
 	"net"
@@ -13,17 +14,23 @@ import (
 // Test send of header
 // This test was written by chatGPT
 func TestSendHeader(t *testing.T) {
-	c1, c2 := net.Pipe()  // c1: writer, c2: reader
+	c1, c2 := net.Pipe() // c1: writer, c2: reader
 	defer c1.Close()
 	defer c2.Close()
 
-	header := models.Header{ 
+	header := models.Header{
 		FileName: "foo.bar",
 		CheckSum: "11586d2eb43b73e539caa3d158c883336c0e2c904b309c0c5ffe2c9b83d562a1",
 	}
 
+	hdrJSON, err := shared.HeaderToJsonB(header)
+	if err != nil {
+		t.Fatalf("failed to marshal header: %v", err)
+	}
+	hdrLen := shared.GetHeaderLength(hdrJSON)
+
 	go func() {
-		err := sendHeader(c1, header)
+		err := sendHeader(c1, hdrJSON, hdrLen)
 		if err != nil {
 			t.Errorf("sendHeader failed: %v", err)
 		}
@@ -52,4 +59,3 @@ func TestSendHeader(t *testing.T) {
 		t.Errorf("mismatch:\nexpected: %+v\ngot: %+v", header, received)
 	}
 }
-
